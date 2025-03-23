@@ -1,0 +1,12 @@
+{
+    "cSpell.words": [
+        "ADMINPASSWORD",
+        "ADMINUSERNAME",
+        "appendonly",
+        "BASICAUTH",
+        "cpus",
+        "INITDB",
+        "mongosh",
+        "requirepass"
+    ]
+}
