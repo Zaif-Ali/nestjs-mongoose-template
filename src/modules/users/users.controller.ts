@@ -1,11 +1,12 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   NotFoundException,
-  Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -30,14 +31,6 @@ export class UsersController {
   @Get('/')
   @HttpCode(200)
   async get() {
-    await this.emailService.sendEmail(
-      'huzaifa@artemamed.com',
-      'test',
-      'welcome',
-      {
-        name: 'Huzaifa',
-      },
-    );
     let users = await this.cacheService.get('all-users');
     if (!users) {
       console.log('fetching from db');
@@ -48,23 +41,40 @@ export class UsersController {
   }
 
   // Get single user by id
-  @Get('/:id')
+  @Get('/')
   @HttpCode(200)
   @UseGuards(AuthGuard)
   @UseGuards(RolesGuard)
-  async getById(@Param('id') id: string) {
+  async getById(@Query('id') id: string) {
     let user = await this.cacheService.get(`user-${id}`);
     if (user) return user;
-    user = this.usersService.find(+id);
+    user = await this.usersService.findById(+id);
     if (!user) throw new NotFoundException(`User with id: ${id} not found`);
     await this.cacheService.set(`user-${id}`, user);
     return { user: user };
   }
 
+  // Get single user by email
+  @Get('/')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @UseGuards(RolesGuard)
+  async getByEmail(@Query('email') email: string) {
+    let user = await this.cacheService.get(`user-${email}`);
+    if (user) return user;
+    user = await this.usersService.findByEmail(email);
+    if (!user) throw new NotFoundException(`User with id: ${email} not found`);
+    await this.cacheService.set(`user-${email}`, user);
+    return { user: user };
+  }
+  
+
   // Create a new user
   @Post('/create-user')
   @HttpCode(201)
-  createUser(@Body() CreateUserDto: CreateUserDto) {
-    return this.usersService.create({ name: CreateUserDto.name });
+  async createUser(@Body() CreateUserDto: CreateUserDto) {
+    const user = await this.usersService.findByEmail(CreateUserDto.email);
+    if (user) throw new BadRequestException('Email already exists');
+    return this.usersService.create(CreateUserDto);
   }
 }

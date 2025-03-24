@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from '../../database/schemas/user.schema';
 import { Model } from 'mongoose';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -9,28 +10,23 @@ export class UsersService {
 
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>){}
 
-  private users = [
-    {
-      id: 1,
-      name: 'John Doe',
-    },
-    {
-      id: 2,
-      name: 'Emily Smith',
-    },
-  ];
   get() {
     this.logger.log('Getting all users');
     return this.userModel.find();
   }
 
-  find(id: number) {
-    return this.users.find((user) => user.id === id);
+  findById(id: number) {
+    return this.userModel.findById(id);
   }
 
-  create(userDTO: { name: string }) {
-    const newUser = { id: this.users.length + 1, name: userDTO.name };
-    this.users.push(newUser);
+  findByEmail(email: string) {
+    return this.userModel.findOne({ email });
+  }
+
+  async create(userDTO: CreateUserDto) {
+    this.logger.log(`Creating user: ${userDTO.name}`);
+    const newUser = new this.userModel(userDTO);
+    await newUser.save();
     return newUser;
   }
 }
